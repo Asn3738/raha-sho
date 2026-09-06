@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 1. User profile collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 2. Recovery 30-day program contents (Read-only for users)
+    match /recovery_days/{dayId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Admin only
+    }
+
+    // 3. User Progress collection
+    match /user_progress/{userId}/days/{dayNumber} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 4. Daily Tasks collection
+    match /daily_tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Admin only
+    }
+
+    // 5. User Journal entries
+    match /journals/{userId}/{journalId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 6. Craving & Emergency logs
+    match /cravings/{userId}/{cravingId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 7. Achievements & Badges
+    match /achievements/{userId}/{badgeId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 8. User Settings
+    match /settings/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}
